@@ -1,4 +1,4 @@
-# AWSIM controllers
+# TSWR controllers
 
 Repository contains 2 controllers:
 - [x] Cross Entropy Method controller (CEM)
