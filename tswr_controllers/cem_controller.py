@@ -151,7 +151,7 @@ class CEMController(Node):
         return a
 
     def random_steer(self, mu, sigma):
-        rand_steer = random.uniform((mu - (sigma / 2)), (mu + (sigma / 2)))
+        rand_steer = random.gauss(mu, sigma)
 
         return rand_steer
 
