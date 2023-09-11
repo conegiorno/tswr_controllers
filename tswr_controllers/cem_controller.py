@@ -18,7 +18,7 @@ import pandas as pd
 k = 0.05  # look forward gain
 Lfc = 0.85  # [m] look-ahead distance
 Kp = 0.8  # speed proportional gain
-dt = 0.1  # [s] time tick
+dt = 0.04  # [s] time tick
 WB = 0.28  # [m] wheel base of vehicle
 iter_cem = 500 # cem loop iterations
 traj_dim = 80 # length of simulated trajectory
