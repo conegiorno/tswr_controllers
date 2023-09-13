@@ -16,15 +16,16 @@ import pandas as pd
 
 # Parameters
 k = 0.05  # look forward gain
-Lfc = 0.85  # [m] look-ahead distance
-Kp = 0.8  # speed proportional gain
-dt = 0.04  # [s] time tick
+Lfc = 1.95  # [m] look-ahead distance
+Kp = 0.7  # speed proportional gain
+dt = 0.1  # [s] time tick
 WB = 0.28  # [m] wheel base of vehicle
-iter_cem = 500 # cem loop iterations
-traj_dim = 80 # length of simulated trajectory
+iter_cem = 15 # cem loop iterations
+samples = 60 # number of samples
+traj_dim = 60 # length of simulated trajectory
 mu = 0.0 # mean of standard distribution
-sigma = 0.2 # spread in the distribution
-elite_size = 20 # size of elites set
+sigma = 0.9 # spread in the distribution
+elite_size = 10 # size of elites set
 cost_err = 0.1 # minimal cost that will break CEM loop
 
 class State:
@@ -104,7 +105,7 @@ class CEMController(Node):
 
         self.model = AWsimModel(dt=dt)
                 
-        self.target_speed = 3.5 # [units/s]
+        self.target_speed = 1.2 # [units/s]
         
         self.target_path = TargetPath(x_r, y_r)
         self.target_idx = 28
@@ -189,6 +190,7 @@ class CEMController(Node):
     def get_action(self, cost_tuple_list, elite_size):
         elites = []
         global mu
+        global sigma
 
         elites = list(zip(*cost_tuple_list))[1]
         elites = elites[0 : elite_size]
@@ -196,6 +198,7 @@ class CEMController(Node):
         average = sum(elites) / len(elites)
         mu = average
         mu = np.clip(mu, -0.62 + (sigma / 2), 0.62 - (sigma / 2))
+        sigma = sigma * 0.85
 
         return average
 
@@ -205,15 +208,18 @@ class CEMController(Node):
         if Lf == 0:
             return 0.0
         
+        global sigma
+        sigma = 1.0
+        
         target_state = self.target_path.states[self.target_idx]
 
-        cost_tuple_list = self.simulate_cost(self.model, state, target_state, Lf)
-        cost_tuple_list.sort()
-        delta = self.get_action(cost_tuple_list, elite_size)
-
-        # drive straight at start
-        if state.v < 0.1:
-            delta = 0.0
+        # CEM loop
+        for iteration in range(iter_cem):
+            # samples and cost for them
+            cost_tuple_list = self.simulate_cost(self.model, state, target_state, Lf)
+            cost_tuple_list.sort()
+            # update mu and sigma from elite set
+            delta = self.get_action(cost_tuple_list, elite_size)
 
         return delta
         
