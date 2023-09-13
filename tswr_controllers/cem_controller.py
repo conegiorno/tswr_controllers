@@ -18,13 +18,14 @@ import pandas as pd
 k = 0.05  # look forward gain
 Lfc = 1.95  # [m] look-ahead distance
 Kp = 0.7  # speed proportional gain
-dt = 0.1  # [s] time tick
+dt = 0.04  # [s] time tick
 WB = 0.28  # [m] wheel base of vehicle
 iter_cem = 15 # cem loop iterations
 samples = 60 # number of samples
 traj_dim = 60 # length of simulated trajectory
 mu = 0.0 # mean of standard distribution
 sigma = 0.9 # spread in the distribution
+sigma_shrink = 0.85 # reduction of spread in distribution
 elite_size = 10 # size of elites set
 cost_err = 0.1 # minimal cost that will break CEM loop
 
@@ -106,6 +107,7 @@ class CEMController(Node):
         self.model = AWsimModel(dt=dt)
                 
         self.target_speed = 1.2 # [units/s]
+        self.msg_counter = 1 # counter for ROS messages
         
         self.target_path = TargetPath(x_r, y_r)
         self.target_idx = 28
@@ -198,7 +200,7 @@ class CEMController(Node):
         average = sum(elites) / len(elites)
         mu = average
         mu = np.clip(mu, -0.62 + (sigma / 2), 0.62 - (sigma / 2))
-        sigma = sigma * 0.85
+        sigma *= sigma_shrink
 
         return average
 
@@ -230,7 +232,8 @@ class CEMController(Node):
         acc_msg.longitudinal.acceleration = accel
         acc_msg.longitudinal.speed = self.target_speed
         self.publisher_.publish(acc_msg)
-        self.get_logger().info(f'Published acc: {accel} and steer: {steer}')
+        self.get_logger().info(f'[{self.msg_counter}]. Published acc: {round(accel,10)} and steer: {round(steer,10)}')
+        self.msg_counter += 1
 
 
 def main(args=None):
